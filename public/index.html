@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Kasir POS - Sistem POS Multi-Outlet</title>
+    <link rel="stylesheet" href="/css/index.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <h2>Sistem POS</h2>
+        <div class="role-hint" id="sidebarHint">Memuat peran…</div>
+        <ul>
+          <li data-allow="cashier">
+            <a href="/index.html" class="active">🧾 Kasir POS</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/products.html">📦 Katalog Produk</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/inventory.html">📊 Stok & Inventaris</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/reports.html">📈 Laporan</a>
+          </li>
+          <li data-allow="super_admin">
+            <a href="/admin.html" class="admin-only">👑 Dasbor Pemilik</a>
+          </li>
+        </ul>
+        <hr
+          style="margin: 14px 0; border: none; border-top: 1px solid #3d566e"
+        />
+        <div
+          id="cashierHelp"
+          style="font-size: 11px; opacity: 0.7; line-height: 1.5"
+        >
+          <b>Kasir:</b> Scan barcode atau cari produk → tambah ke keranjang →
+          hitung diskon & pajak → Selesaikan.
+        </div>
+        <div
+          id="managerHelp"
+          data-allow="super_admin,manager"
+          style="display: none; font-size: 11px; opacity: 0.7"
+        >
+          Manajer: Kelola stok & katalog di menu Inventaris/Katalog.
+        </div>
+        <button
+          onclick="logout()"
+          class="danger"
+          style="width: 100%; margin-top: 12px"
+        >
+          Keluar
+        </button>
+      </div>
+      <div class="main-content">
+        <div class="header">
+          <div>
+            <h1>Kasir POS <small>Transaksi cepat — outlet aktif</small></h1>
+          </div>
+          <div class="user-info">
+            <div
+              id="outletSwitcher"
+              style="display: none; gap: 6px; align-items: center"
+            >
+              <label style="font-size: 11px">Cabang:</label
+              ><select
+                id="outletSelect"
+                style="
+                  padding: 5px;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                  font-size: 12px;
+                "
+              >
+                <option value="">Memuat cabang…</option>
+              </select>
+            </div>
+            <div
+              id="outletBadge"
+              style="
+                display: none;
+                gap: 6px;
+                align-items: center;
+                background: #eaf2f8;
+                border: 1px solid #bfdbfe;
+                padding: 5px 10px;
+                border-radius: 6px;
+                font-size: 11px;
+                color: #1e40af;
+                font-weight: 600;
+              "
+            >
+              🏪 <span id="outletBadgeText">Memuat cabang…</span>
+            </div>
+            <span id="roleBadge" class="role-badge">Memuat…</span>
+            <span id="userDisplay" style="font-size: 12px; color: #555"></span>
+            <span id="onlineStatus" style="font-size: 11px; color: #27ae60"
+              >● Online</span
+            >
+          </div>
+        </div>
+        <div class="content">
+          <div id="guardMsg"></div>
+          <div class="info-role" id="roleInfo">Memuat informasi peran…</div>
+          <div class="search-bar">
+            <input
+              type="text"
+              id="barcodeInput"
+              placeholder="Pindai barcode / ketik lalu Enter…"
+            />
+            <input
+              type="text"
+              id="productSearch"
+              placeholder="Cari produk (nama/SKU)…"
+            />
+          </div>
+          <div
+            id="productsList"
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+              gap: 10px;
+              margin-bottom: 16px;
+            "
+          ></div>
+          <div class="cart-section">
+            <h2>🛒 Keranjang Belanja</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Produk</th>
+                  <th>Jml</th>
+                  <th>Harga</th>
+                  <th>Total</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="cartItems">
+                <tr>
+                  <td
+                    colspan="5"
+                    style="text-align: center; color: #888; font-size: 12px"
+                  >
+                    Keranjang kosong — cari produk di atas
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="summary">
+              <div class="summary-item">
+                <label>Subtotal:</label
+                ><span class="amount" id="subtotal">Rp 0</span>
+              </div>
+              <div class="summary-item">
+                <label>Diskon:</label
+                ><span class="amount" id="discountAmount">Rp 0</span>
+              </div>
+              <div class="summary-item">
+                <label>Pajak (PPN):</label
+                ><span class="amount" id="taxAmount">Rp 0</span>
+              </div>
+              <div
+                class="summary-item"
+                style="background: #eafaf1; border: 1px solid #27ae60"
+              >
+                <label>TOTAL BAYAR:</label
+                ><span class="amount" id="totalAmount" style="font-size: 15px"
+                  >Rp 0</span
+                >
+              </div>
+            </div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+              "
+            >
+              <div class="form-group">
+                <label>Tipe Diskon</label
+                ><select
+                  id="discountType"
+                  onchange="posApp.updateCartDisplay()"
+                >
+                  <option value="nominal">Nominal (Rp)</option>
+                  <option value="percentage">Persentase (%)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Nilai Diskon</label
+                ><input
+                  type="number"
+                  id="discountValue"
+                  value="0"
+                  onchange="posApp.updateCartDisplay()"
+                />
+              </div>
+              <div class="form-group">
+                <label>Tarif Pajak (%)</label
+                ><input
+                  type="number"
+                  id="taxRate"
+                  value="10"
+                  onchange="posApp.updateCartDisplay()"
+                />
+              </div>
+              <div class="form-group">
+                <label>Metode Pembayaran</label
+                ><select id="paymentMethod">
+                  <option value="cash">Tunai</option>
+                  <option value="card">Kartu</option>
+                  <option value="transfer">Transfer</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Jumlah Bayar (Rp)</label
+              ><input
+                type="number"
+                id="paidAmount"
+                placeholder="Masukkan jumlah uang dibayar"
+                step="0.01"
+              />
+            </div>
+            <div class="action-buttons">
+              <button id="completeTransactionBtn" style="flex: 1">
+                ✅ Selesaikan Transaksi
+              </button>
+              <button
+                onclick="
+                  posApp.cart = [];
+                  posApp.updateCartDisplay();
+                "
+                class="secondary"
+              >
+                Kosongkan
+              </button>
+            </div>
+            <div style="margin-top: 8px; font-size: 11px; color: #888">
+              Kalkulasi presisi (hindari pembulatan floating-point). Struk akan
+              tercetak otomatis.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="payOverlay"
+      class="pay-overlay"
+      onclick="if (event.target === this) closePayModal();"
+    >
+      <div class="pay-modal" id="payModalBox">
+        <div class="pay-top"></div>
+        <div class="pay-body">
+          <div class="pay-icon">✓</div>
+          <div class="pay-title" id="payTitle">Pembayaran Berhasil!</div>
+          <div class="pay-sub" id="paySub">
+            Transaksi tersimpan — struk siap dicetak
+          </div>
+          <div class="pay-detail" id="payDetail"></div>
+          <div class="pay-kembali" id="payKembali"></div>
+          <div class="pay-actions">
+            <button class="pay-btn ghost" onclick="closePayModal()">
+              Tutup
+            </button>
+            <button class="pay-btn secondary" onclick="reprintLastReceipt()">
+              Cetak Ulang
+            </button>
+            <button class="pay-btn primary" onclick="closePayModal()">
+              Lanjut Jual ✨
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/js/offline.js"></script>
+    <script src="/js/app.js"></script>
+    <script src="/js/role-nav.js"></script>
+    <script>
+      (function () {
+        var r = (function () {
+          try {
+            var t = localStorage.getItem("accessToken");
+            if (!t) return null;
+            var b = t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+            var j = JSON.parse(
+              decodeURIComponent(
+                atob(b)
+                  .split("")
+                  .map(function (c) {
+                    return (
+                      "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)
+                    );
+                  })
+                  .join(""),
+              ),
+            );
+            return j.role;
+          } catch (e) {
+            return localStorage.getItem("userRole");
+          }
+        })();
+        var info = document.getElementById("roleInfo");
+        var hint = document.getElementById("sidebarHint");
+        if (r === "super_admin") {
+          if (info)
+            info.innerHTML =
+              "Anda masuk sebagai <b>Pemilik (Super Admin)</b> — dapat berpindah cabang & kelola semua outlet.";
+          if (hint) hint.textContent = "Mode Pemilik — akses penuh";
+        } else if (r === "manager") {
+          if (info)
+            info.innerHTML =
+              "Anda masuk sebagai <b>Manajer Outlet</b> — kelola stok & laporan cabang Anda. Untuk jualan, gunakan Kasir di atas.";
+          if (hint) hint.textContent = "Mode Manajer — kelola outlet";
+        } else {
+          if (info)
+            info.innerHTML =
+              "Anda masuk sebagai <b>Kasir</b> — hanya melayani transaksi di outlet Anda.";
+          if (hint) hint.textContent = "Mode Kasir — transaksi saja";
+        }
+      })();
+      window.addEventListener("online", function () {
+        var e = document.getElementById("onlineStatus");
+        if (e) {
+          e.textContent = "● Online";
+          e.style.color = "#27ae60";
+        }
+      });
+      window.addEventListener("offline", function () {
+        var e = document.getElementById("onlineStatus");
+        if (e) {
+          e.textContent = "● Offline";
+          e.style.color = "#e74c3c";
+        }
+      });
+    </script>
+  </body>
+</html>

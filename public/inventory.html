@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Stok & Inventaris - Sistem POS</title>
+    <link rel="stylesheet" href="/css/inventory.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <h2>Sistem POS</h2>
+        <div class="role-hint" id="sidebarHint">Memuat peran…</div>
+        <ul>
+          <li data-allow="cashier"><a href="/index.html">🧾 Kasir POS</a></li>
+          <li data-allow="super_admin,manager">
+            <a href="/products.html">📦 Katalog Produk</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/inventory.html" class="active">📊 Stok & Inventaris</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/reports.html">📈 Laporan</a>
+          </li>
+          <li data-allow="super_admin">
+            <a href="/admin.html" class="admin-only">👑 Dasbor Pemilik</a>
+          </li>
+        </ul>
+        <hr
+          style="margin: 14px 0; border: none; border-top: 1px solid #3d566e"
+        />
+        <div style="font-size: 11px; opacity: 0.7; line-height: 1.5">
+          Hanya <b>Manajer & Pemilik</b> yang dapat menyesuaikan stok. Kasir
+          hanya melihat.
+        </div>
+        <button
+          onclick="logout()"
+          class="danger"
+          style="width: 100%; margin-top: 12px"
+        >
+          Keluar
+        </button>
+      </div>
+      <div class="main-content">
+        <div class="header">
+          <div>
+            <h1>
+              Stok & Inventaris
+              <small>Per outlet • Audit ledger tidak dapat dihapus</small>
+            </h1>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <div
+              id="outletSwitcher"
+              style="display: none; gap: 6px; align-items: center"
+            >
+              <label style="font-size: 11px">Cabang:</label
+              ><select
+                id="outletSelect"
+                onchange="
+                  loadInventory();
+                  loadLowStock();
+                  loadStockLedger();
+                "
+                style="
+                  padding: 5px;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                  font-size: 12px;
+                "
+              >
+                <option value="">Memuat cabang…</option>
+              </select>
+            </div>
+            <div
+              id="outletBadge"
+              style="
+                display: none;
+                gap: 6px;
+                align-items: center;
+                background: #eaf2f8;
+                border: 1px solid #bfdbfe;
+                padding: 5px 10px;
+                border-radius: 6px;
+                font-size: 11px;
+                color: #1e40af;
+                font-weight: 600;
+              "
+            >
+              🏪 <span id="outletBadgeText">Memuat cabang…</span>
+            </div>
+            <span id="roleBadge" class="role-badge">Memuat…</span>
+            <span id="userDisplay" style="font-size: 12px; color: #555"></span>
+          </div>
+        </div>
+        <div class="content">
+          <div id="guardMsg"></div>
+          <div class="info-role" id="roleInfo">
+            Halaman ini untuk <b>Manajer & Pemilik</b>. Kasir tidak dapat
+            mengubah stok — perubahan stok dicatat sebagai ledger immutable.
+          </div>
+          <div class="card">
+            <h3>📦 Level Stok Per Outlet</h3>
+            <p class="desc">
+              Menampilkan jumlah stok produk P di outlet O. Stok di bawah ambang
+              batas akan ditandai <b>Stok Menipis</b>.
+            </p>
+            <div class="search-bar">
+              <input
+                id="searchInventory"
+                placeholder="Cari produk (nama/SKU)…"
+              /><button onclick="loadInventory()">Muat Ulang</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Nama Produk</th>
+                  <th>Stok Saat Ini</th>
+                  <th>Stok Minimum</th>
+                  <th>Status</th>
+                  <th data-allow="super_admin,manager">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTable"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h3>⚠️ Peringatan Stok Menipis</h3>
+            <p class="desc">
+              Notifikasi otomatis jika stok menyentuh ambang batas minimum.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Produk</th>
+                  <th>Stok</th>
+                  <th>Minimum</th>
+                  <th>Kekurangan</th>
+                </tr>
+              </thead>
+              <tbody id="lowStockTable"></tbody>
+            </table>
+          </div>
+          <div class="card" data-allow="super_admin,manager">
+            <h3>✏️ Penyesuaian Stok (Ledger)</h3>
+            <p class="desc">
+              Setiap perubahan stok tidak langsung di-UPDATE, melainkan dicatat
+              sebagai transaksi ledger (tipe: masuk, keluar, penyesuaian, rusak,
+              retur).
+            </p>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+              "
+            >
+              <div class="form-group">
+                <label>Produk</label
+                ><select id="adjustProduct">
+                  <option value="">Pilih produk…</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Jenis Pergerakan</label
+                ><select id="movementType">
+                  <option value="stock_in">Barang Masuk</option>
+                  <option value="stock_out">Barang Keluar</option>
+                  <option value="adjustment">Penyesuaian/Opname</option>
+                  <option value="damage">Barang Rusak</option>
+                  <option value="return">Retur</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Jumlah</label
+                ><input
+                  type="number"
+                  id="adjustQuantity"
+                  min="1"
+                  placeholder="Jumlah"
+                />
+              </div>
+              <div class="form-group">
+                <label>Catatan</label
+                ><input id="adjustNotes" placeholder="Catatan (opsional)" />
+              </div>
+            </div>
+            <button
+              onclick="adjustStock()"
+              style="width: 100%; margin-top: 8px"
+            >
+              Simpan Penyesuaian
+            </button>
+          </div>
+          <div class="card">
+            <h3>📜 Buku Besar Pergerakan Stok (Stock Ledger)</h3>
+            <div class="search-bar">
+              <input type="date" id="ledgerStartDate" /><input
+                type="date"
+                id="ledgerEndDate"
+              /><button onclick="loadStockLedger()">Filter</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>SKU</th>
+                  <th>Jenis</th>
+                  <th>Perubahan</th>
+                  <th>Pengguna</th>
+                  <th>Catatan</th>
+                </tr>
+              </thead>
+              <tbody id="ledgerTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="stockOverlay"
+      class="stock-overlay"
+      onclick="if (event.target === this) closeStockModal();"
+    >
+      <div class="stock-modal" id="stockModalBox">
+        <div class="stock-top"></div>
+        <div class="stock-body">
+          <div class="stock-icon" id="stockIcon">✓</div>
+          <div class="stock-title" id="stockTitle">
+            Stok Berhasil Disesuaikan
+          </div>
+          <div class="stock-sub" id="stockSub">Tercatat di ledger</div>
+          <div class="stock-detail" id="stockDetail"></div>
+          <div class="stock-actions">
+            <button class="stock-btn ghost" onclick="closeStockModal()">
+              Tutup
+            </button>
+            <button class="stock-btn primary" onclick="closeStockModal()">
+              Oke, Mantap ✨
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/js/role-nav.js"></script>
+    <script src="/js/inventory.js"></script>
+  </body>
+</html>

@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Admin - Dasbor Pemilik</title>
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Sidebar: navigasi peran -->
+      <div class="sidebar">
+        <h2>POS Multi-Outlet</h2>
+        <div class="role-hint">Panel Pemilik — Super Admin</div>
+        <ul>
+          <li data-allow="super_admin">
+            <a href="/admin.html" class="active admin-only">👑 Dasbor Pemilik</a>
+          </li>
+          <li data-allow="cashier"><a href="/index.html">🧾 Kasir POS</a></li>
+          <li data-allow="super_admin,manager">
+            <a href="/products.html">📦 Katalog Produk</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/inventory.html">📊 Stok & Inventaris</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/reports.html">📈 Laporan & Analitik</a>
+          </li>
+        </ul>
+        <hr style="margin: 16px 0; border: none; border-top: 1px solid #3d566e" />
+        <div style="font-size: 11px; opacity: 0.6; margin-bottom: 8px">
+          Hanya Super Admin dapat melihat semua outlet & kelola pengguna.
+        </div>
+        <button onclick="logout()" class="danger" style="width: 100%">Keluar</button>
+      </div>
+
+      <!-- Konten utama -->
+      <div class="main-content">
+        <div class="header">
+          <div>
+            <h1 style="font-size: 18px; color: #2c3e50">Dasbor Pemilik</h1>
+            <div style="font-size: 11px; color: #888">
+              Ringkasan semua cabang • Mode Super Admin
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center">
+            <div id="outletSwitcher" style="display: none; gap: 6px; align-items: center">
+              <label style="font-size: 12px">Cabang:</label>
+              <select id="outletSelect" style="padding: 6px; border: 1px solid #ddd; border-radius: 4px">
+                <option value="">Semua Cabang</option>
+              </select>
+            </div>
+            <span id="roleBadge" class="role-badge">Memuat…</span>
+            <span id="userDisplay" style="font-size: 12px; color: #666"></span>
+            <span id="onlineStatus" style="font-size: 11px; color: #27ae60">● Online</span>
+          </div>
+        </div>
+
+        <div class="content">
+          <div id="guardMsg"></div>
+
+          <!-- Statistik ringkas -->
+          <div class="stats">
+            <div class="stat">
+              <h4>Total Pendapatan Hari Ini</h4>
+              <div class="val" id="statRevenue">Rp 0</div>
+            </div>
+            <div class="stat" style="background: linear-gradient(135deg, #11998e, #38ef7d)">
+              <h4>Transaksi Hari Ini</h4>
+              <div class="val" id="statTrx">0</div>
+            </div>
+            <div class="stat" style="background: linear-gradient(135deg, #f46b45, #eea849)">
+              <h4>Produk Terjual</h4>
+              <div class="val" id="statSold">0</div>
+            </div>
+            <div class="stat" style="background: linear-gradient(135deg, #8e2de2, #4a00e0)">
+              <h4>Cabang Aktif</h4>
+              <div class="val" id="statOutletCount">–</div>
+            </div>
+          </div>
+
+          <div class="grid2">
+            <!-- Kelola Outlet -->
+            <div class="card">
+              <h3>🏪 Kelola Outlet / Cabang</h3>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nama</th>
+                    <th>Kota</th>
+                    <th>Status</th>
+                    <th style="width: 80px">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="outletTable">
+                  <tr>
+                    <td colspan="4" style="text-align: center; color: #888">Memuat…</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div
+                id="outletMsg"
+                style="display: none; margin-top: 8px; padding: 8px; border-radius: 4px; font-size: 12px"
+              ></div>
+
+              <!-- Form tambah cabang -->
+              <div class="form-group" style="margin-top: 12px">
+                <label>Tambah Cabang Baru (Super Admin)</label>
+
+                <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                  <input id="newOutletName" placeholder="Nama cabang" style="flex: 1; min-width: 120px" />
+                  <input id="newOutletCity" placeholder="Kota" style="max-width: 120px" />
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px">
+                  <input id="newManagerUser" placeholder="Username manager (unik)" />
+                  <input id="newManagerPass" type="password" placeholder="Password manager (min 6, beda dgn kasir)" />
+                  <input id="newCashierUser" placeholder="Username kasir (unik)" />
+                  <input id="newCashierPass" type="password" placeholder="Password kasir (min 6, beda dgn manager)" />
+                </div>
+
+                <button id="btnAddOutlet" onclick="createOutlet()" style="margin-top: 8px; width: 100%">
+                  Tambah Cabang + Buat Akun
+                </button>
+
+                <div style="font-size: 11px; color: #888; margin-top: 4px">
+                  Wajib isi 4 kredensial — semuanya harus berbeda & unik global.
+                  Akun otomatis masuk ke <b>Kelola Pengguna &amp; Peran</b>.
+                  Hapus cabang akan menonaktifkan manager & kasir cabang tersebut.
+                </div>
+              </div>
+            </div>
+
+            <!-- Kelola Pengguna -->
+            <div class="card">
+              <h3>👥 Kelola Pengguna & Peran</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pengguna</th>
+                    <th>Peran</th>
+                    <th>Cabang</th>
+                  </tr>
+                </thead>
+                <tbody id="userTable">
+                  <tr><td colspan="3" style="text-align: center; color: #888">Memuat…</td></tr>
+                </tbody>
+              </table>
+              <div style="margin-top: 10px; font-size: 11px; color: #888">
+                Manajer hanya akses outletnya. Kasir hanya transaksi outletnya.
+                Pemilik bisa berpindah konteks outlet. Akun baru dari tambah cabang muncul di sini;
+                hapus cabang akan menghilangkan manager/kasir terkait.
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>📋 Ringkasan Cepat</h3>
+            <p style="font-size: 13px; color: #555; line-height: 1.6">
+              Sebagai <b>Pemilik</b> Anda melihat agregasi semua cabang. Gunakan filter cabang di header
+              untuk melihat per outlet. Untuk operasional harian, buka <a href="/index.html">Kasir</a>.
+              Untuk stok & produk, kelola di menu <b>Katalog</b> & <b>Inventaris</b>.
+              Laporan lintas cabang ada di <a href="/reports.html">Laporan</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal konfirmasi hapus cabang -->
+    <div id="deleteModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="modal-icon">⚠️</div>
+        <h3 id="deleteModalTitle">Hapus cabang?</h3>
+        <p class="modal-desc">
+          Anda akan menghapus <strong id="deleteModalName">cabang ini</strong>.
+          Manager &amp; kasir yang terikat akan <strong>dinonaktifkan otomatis</strong>
+          dan tidak bisa login lagi.
+        </p>
+        <div class="modal-warning">
+          Histori transaksi &amp; stok cabang tetap aman (soft delete).
+          Aksi ini tidak dapat dibatalkan.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" onclick="closeDeleteModal()">Batal</button>
+          <button type="button" id="confirmDeleteBtn" class="btn-danger" onclick="confirmDeleteOutlet()">
+            Ya, hapus cabang
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stack toast notifikasi -->
+    <div id="toastStack" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="/js/role-nav.js"></script>
+    <script>
+      // ============================================================
+      // Helpers
+      // ============================================================
+
+      /** Ambil token dari localStorage */
+      function getToken() {
+        return localStorage.getItem("accessToken") || "";
+      }
+
+      /**
+       * Toast notifikasi — sukses/error, auto-dismiss, animasi halus.
+       * @param {string} message
+       * @param {'success'|'error'} type
+       */
+      function showToast(message, type) {
+        var stack = document.getElementById("toastStack");
+        var toast = document.createElement("div");
+        toast.className = "toast " + (type || "success");
+        toast.innerHTML =
+          '<span class="toast-icon">' + (type === "error" ? "⛔" : "✅") + "</span>" +
+          '<span style="flex:1">' + escapeHtml(message) + "</span>" +
+          '<button class="toast-close" aria-label="Tutup" onclick="this.parentElement.remove()">×</button>';
+
+        stack.appendChild(toast);
+
+        var timer = setTimeout(function () {
+          toast.style.animation = "toastOut 0.22s ease forwards";
+          setTimeout(function () { toast.remove(); }, 220);
+        }, 4000);
+
+        toast.addEventListener("mouseenter", function () { clearTimeout(timer); });
+        toast.addEventListener("mouseleave", function () {
+          timer = setTimeout(function () {
+            toast.style.animation = "toastOut 0.22s ease forwards";
+            setTimeout(function () { toast.remove(); }, 220);
+          }, 1800);
+        });
+      }
+
+      /** Tampilkan pesan sukses/error di bawah tabel outlet + toast */
+      function setOutletMsg(text, isSuccess) {
+        var el = document.getElementById("outletMsg");
+        el.style.display = "block";
+        el.style.background = isSuccess ? "#d4edda" : "#f8d7da";
+        el.style.color = isSuccess ? "#155724" : "#721c24";
+        el.textContent = text;
+        setTimeout(function () { el.style.display = "none"; }, 4500);
+        showToast(text, isSuccess ? "success" : "error");
+      }
+
+      // ============================================================
+      // Dashboard summary
+      // ============================================================
+
+      function refreshDashboard() {
+        var sel = document.getElementById("outletSelect");
+        var q = sel && sel.value ? "?outletId=" + encodeURIComponent(sel.value) : "";
+
+        fetch("/api/dashboard/summary" + q, {
+          headers: { Authorization: "Bearer " + getToken() },
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            var today = d.today || d;
+            document.getElementById("statRevenue").textContent =
+              "Rp " + (today.totalRevenue || 0).toLocaleString("id-ID");
+            document.getElementById("statTrx").textContent = today.transactionCount || 0;
+            document.getElementById("statSold").textContent = today.totalSold || 0;
+          })
+          .catch(function () {});
+      }
+
+      // ============================================================
+      // Daftar pengguna — GET /api/users
+      // ============================================================
+
+      function loadUsers() {
+        fetch("/api/users", { headers: { Authorization: "Bearer " + getToken() } })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            var tb = document.getElementById("userTable");
+            var list = d.users || [];
+
+            if (!list.length) {
+              tb.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#888">Belum ada pengguna</td></tr>';
+              return;
+            }
+
+            tb.innerHTML = list.map(function (u) {
+              var roleLabel =
+                u.role === "super_admin" ? "Super Admin" :
+                u.role === "manager"    ? "Manajer" : "Kasir";
+
+              var outletLabel = u.outlet_name
+                ? u.outlet_name + " - " + (u.city || "")
+                : u.role === "super_admin" ? "Semua" : "-";
+
+              return (
+                "<tr>" +
+                  "<td>" + escapeHtml(u.username) + "</td>" +
+                  '<td><span class="role-badge role-' + u.role + '">' + roleLabel + "</span></td>" +
+                  "<td>" + escapeHtml(outletLabel) + "</td>" +
+                "</tr>"
+              );
+            }).join("");
+          })
+          .catch(function () {
+            document.getElementById("userTable").innerHTML =
+              '<tr><td colspan="3" style="text-align:center;color:#c0392b">Gagal memuat pengguna</td></tr>';
+          });
+      }
+
+      // ============================================================
+      // Daftar outlet — GET /api/outlets
+      // ============================================================
+
+      function loadOutlets() {
+        fetch("/api/outlets", { headers: { Authorization: "Bearer " + getToken() } })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            var tb  = document.getElementById("outletTable");
+            var sel = document.getElementById("outletSelect");
+            var list = d.outlets || d || [];
+            if (!Array.isArray(list)) list = [];
+
+            // Update penghitung cabang aktif
+            var countEl = document.getElementById("statOutletCount");
+            if (countEl) countEl.textContent = list.length;
+
+            if (list.length === 0) {
+              tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#888">Belum ada outlet</td></tr>';
+              if (sel) sel.innerHTML = '<option value="">Semua Cabang</option>';
+              return;
+            }
+
+            tb.innerHTML = list.map(function (o) {
+              return (
+                "<tr>" +
+                  "<td>" + escapeHtml(o.name) + "</td>" +
+                  "<td>" + escapeHtml(o.city || "-") + "</td>" +
+                  '<td><span style="color:#27ae60">● Aktif</span></td>' +
+                  "<td>" +
+                    '<button onclick="deleteOutlet(' + o.id + ', \'' + escapeHtml(o.name).replace(/'/g, "\\'") + '\')" ' +
+                      'style="padding:4px 8px;font-size:11px;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer">Hapus</button>' +
+                  "</td>" +
+                "</tr>"
+              );
+            }).join("");
+
+            if (sel) {
+              var current = sel.value;
+              sel.innerHTML =
+                '<option value="">Semua Cabang</option>' +
+                list.map(function (o) {
+                  return '<option value="' + o.id + '">' + escapeHtml(o.name) + " - " + escapeHtml(o.city || "") + "</option>";
+                }).join("");
+              sel.value = current;
+            }
+          })
+          .catch(function () {
+            document.getElementById("outletTable").innerHTML =
+              '<tr><td colspan="4" style="text-align:center;color:#c0392b">Gagal memuat outlet</td></tr>';
+          });
+      }
+
+      // ============================================================
+      // Tambah cabang — POST /api/outlets
+      // Validasi: 4 kredensial wajib, username & password beda, min 6 char
+      // ============================================================
+
+      async function createOutlet() {
+        var name  = document.getElementById("newOutletName").value.trim();
+        var city  = document.getElementById("newOutletCity").value.trim();
+        var mUser = document.getElementById("newManagerUser").value.trim();
+        var mPass = document.getElementById("newManagerPass").value;
+        var cUser = document.getElementById("newCashierUser").value.trim();
+        var cPass = document.getElementById("newCashierPass").value;
+
+        if (!name || !city) {
+          setOutletMsg("Nama dan kota wajib diisi", false);
+          return;
+        }
+        if (!mUser || !mPass || !cUser || !cPass) {
+          setOutletMsg("Username & password manager dan kasir wajib diisi (semuanya berbeda)", false);
+          return;
+        }
+        if (mUser.toLowerCase() === cUser.toLowerCase()) {
+          setOutletMsg("Username manager dan kasir harus berbeda", false);
+          return;
+        }
+        if (mPass === cPass) {
+          setOutletMsg("Password manager dan kasir harus berbeda", false);
+          return;
+        }
+        if (mPass.length < 6 || cPass.length < 6) {
+          setOutletMsg("Password minimal 6 karakter", false);
+          return;
+        }
+
+        var btn = document.getElementById("btnAddOutlet");
+        btn.disabled = true;
+        btn.textContent = "Menyimpan…";
+
+        try {
+          var r = await fetch("/api/outlets", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + getToken() },
+            body: JSON.stringify({
+              name: name, city: city,
+              managerUsername: mUser, managerPassword: mPass,
+              cashierUsername: cUser, cashierPassword: cPass,
+            }),
+          });
+
+          var j = await r.json();
+
+          if (!r.ok) {
+            setOutletMsg(j.error || "Gagal menambah cabang", false);
+          } else {
+            setOutletMsg('Cabang "' + j.name + '" berhasil — akun manager "' + mUser + '" & kasir "' + cUser + '" dibuat.', true);
+            document.getElementById("newOutletName").value = "";
+            document.getElementById("newOutletCity").value = "";
+            document.getElementById("newManagerUser").value = "";
+            document.getElementById("newManagerPass").value = "";
+            document.getElementById("newCashierUser").value = "";
+            document.getElementById("newCashierPass").value = "";
+            loadOutlets();
+            loadUsers();
+          }
+        } catch (e) {
+          setOutletMsg("Gagal terhubung ke server", false);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Tambah Cabang + Buat Akun";
+        }
+      }
+
+      // ============================================================
+      // Hapus cabang — modal konfirmasi + DELETE /api/outlets/:id
+      // ============================================================
+
+      var pendingDelete = null;
+
+      function openDeleteModal(id, name) {
+        pendingDelete = { id: id, name: name };
+        document.getElementById("deleteModalName").textContent = '"' + name + '"';
+        var overlay = document.getElementById("deleteModal");
+        overlay.classList.add("open");
+        overlay.setAttribute("aria-hidden", "false");
+        document.getElementById("confirmDeleteBtn").focus();
+      }
+
+      function closeDeleteModal() {
+        var overlay = document.getElementById("deleteModal");
+        overlay.classList.remove("open");
+        overlay.setAttribute("aria-hidden", "true");
+        pendingDelete = null;
+        var btn = document.getElementById("confirmDeleteBtn");
+        btn.disabled = false;
+        btn.textContent = "Ya, hapus cabang";
+      }
+
+      /** Dipanggil tombol Hapus di tabel — buka modal, bukan confirm() */
+      function deleteOutlet(id, name) {
+        openDeleteModal(id, name);
+      }
+
+      async function confirmDeleteOutlet() {
+        if (!pendingDelete) return;
+        var btn = document.getElementById("confirmDeleteBtn");
+        btn.disabled = true;
+        btn.textContent = "Menghapus…";
+
+        try {
+          var r = await fetch("/api/outlets/" + pendingDelete.id, {
+            method: "DELETE",
+            headers: { Authorization: "Bearer " + getToken() },
+          });
+          var j = await r.json();
+
+          if (!r.ok) {
+            setOutletMsg(j.error || "Gagal menghapus cabang", false);
+            btn.disabled = false;
+            btn.textContent = "Ya, hapus cabang";
+            return;
+          }
+
+          closeDeleteModal();
+          var detail = j.deactivatedCount
+            ? " — " + j.deactivatedCount + " akun (manager/kasir) dinonaktifkan"
+            : "";
+          setOutletMsg(j.message + detail, true);
+          loadOutlets();
+          loadUsers();
+          refreshDashboard();
+        } catch (e) {
+          setOutletMsg("Gagal terhubung ke server", false);
+          btn.disabled = false;
+          btn.textContent = "Ya, hapus cabang";
+        }
+      }
+
+      (function bindModalDismiss() {
+        var overlay = document.getElementById("deleteModal");
+        overlay.addEventListener("click", function (e) {
+          if (e.target === overlay) closeDeleteModal();
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && overlay.classList.contains("open")) closeDeleteModal();
+        });
+      })();
+
+      // ============================================================
+      // Util & init
+      // ============================================================
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      (function init() {
+        if (!getToken()) {
+          location.href = "/login.html";
+          return;
+        }
+        refreshDashboard();
+        loadOutlets();
+        loadUsers();
+        document.getElementById("outletSelect")?.addEventListener("change", refreshDashboard);
+      })();
+    </script>
+  </body>
+</html>

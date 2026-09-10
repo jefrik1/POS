@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Katalog Produk - Sistem POS</title>
+    <link rel="stylesheet" href="/css/products.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <h2>Sistem POS</h2>
+        <div class="role-hint" id="sidebarHint">Memuat peran…</div>
+        <ul>
+          <li data-allow="cashier"><a href="/index.html">🧾 Kasir POS</a></li>
+          <li data-allow="super_admin,manager">
+            <a href="/products.html" class="active">📦 Katalog Produk</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/inventory.html">📊 Stok & Inventaris</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/reports.html">📈 Laporan</a>
+          </li>
+          <li data-allow="super_admin">
+            <a href="/admin.html" class="admin-only">👑 Dasbor Pemilik</a>
+          </li>
+        </ul>
+        <hr
+          style="margin: 14px 0; border: none; border-top: 1px solid #3d566e"
+        />
+        <div style="font-size: 11px; opacity: 0.7; line-height: 1.5">
+          Hanya <b>Manajer & Pemilik</b> dapat menambah produk & varian. Kasir
+          hanya dapat melihat katalog di Kasir.
+        </div>
+        <button
+          onclick="logout()"
+          class="danger"
+          style="width: 100%; margin-top: 12px"
+        >
+          Keluar
+        </button>
+      </div>
+      <div class="main-content">
+        <div class="header">
+          <div>
+            <h1>
+              Katalog Produk
+              <small>Kelola SKU, varian ukuran/warna, harga & kategori</small>
+            </h1>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <span id="roleBadge" class="role-badge">Memuat…</span>
+            <span id="userDisplay" style="font-size: 12px; color: #555"></span>
+          </div>
+        </div>
+        <div class="content">
+          <div id="guardMsg"></div>
+          <div class="info-role">
+            Halaman ini untuk <b>Manajer & Pemilik</b>. Kasir akan dialihkan ke
+            Kasir POS.
+          </div>
+          <div class="card" data-allow="super_admin,manager">
+            <h3>➕ Tambah Produk Baru</h3>
+            <p class="desc">
+              Setiap produk memiliki SKU unik. Harga disimpan presisi (desimal)
+              dan varian memiliki SKU sendiri.
+            </p>
+            <div class="form-row">
+              <div class="form-group">
+                <label>SKU *</label
+                ><input id="newProductSku" placeholder="cth: SKU-001" />
+              </div>
+              <div class="form-group">
+                <label>Nama Produk *</label
+                ><input id="newProductName" placeholder="Nama produk" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Kategori *</label
+                ><select id="newProductCategory">
+                  <option value="">Pilih kategori…</option>
+                  <option value="1">Elektronik</option>
+                  <option value="2">Pakaian</option>
+                  <option value="3">Makanan</option>
+                  <option value="4">Lainnya</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Harga Jual (Rp) *</label
+                ><input
+                  type="number"
+                  id="newProductPrice"
+                  placeholder="cth: 50000"
+                />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Harga Modal (Rp) *</label
+                ><input
+                  type="number"
+                  id="newProductCost"
+                  placeholder="cth: 35000"
+                />
+              </div>
+              <div class="form-group">
+                <label>Deskripsi</label
+                ><textarea
+                  id="newProductDescription"
+                  placeholder="Deskripsi opsional"
+                ></textarea>
+              </div>
+            </div>
+            <button onclick="addProduct()" style="width: 100%">
+              Simpan Produk
+            </button>
+          </div>
+          <div class="card">
+            <h3>📋 Daftar Produk</h3>
+            <div class="search-bar">
+              <input id="searchProducts" placeholder="Cari nama/SKU…" /><button
+                onclick="searchProducts()"
+              >
+                Cari</button
+              ><button class="secondary" onclick="loadProducts()">
+                Muat Ulang
+              </button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Nama</th>
+                  <th>Kategori</th>
+                  <th>Harga Jual</th>
+                  <th>Modal</th>
+                  <th>Margin</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="productsTable">
+                <tr>
+                  <td colspan="8" style="text-align: center; color: #888">
+                    Memuat…
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card" data-allow="super_admin,manager">
+            <h3>🎨 Varian Produk (Ukuran/Warna)</h3>
+            <p class="desc">
+              Varian = opsi produk dengan SKU unik dan penyesuaian harga.
+            </p>
+            <div class="form-group">
+              <label>Pilih Produk Induk</label
+              ><select id="variantProductSelect">
+                <option value="">Pilih produk…</option>
+              </select>
+            </div>
+            <div id="variantsList" style="display: none; margin-bottom: 12px">
+              <table>
+                <thead>
+                  <tr>
+                    <th>SKU Varian</th>
+                    <th>Nama Varian</th>
+                    <th>Nilai</th>
+                    <th>Penyesuaian Harga</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="variantsTable"></tbody>
+              </table>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>SKU Varian *</label
+                ><input id="variantSku" placeholder="cth: SKU-001-M" />
+              </div>
+              <div class="form-group">
+                <label>Nama Varian *</label
+                ><input id="variantName" placeholder="cth: Ukuran M" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nilai Varian</label
+                ><input id="variantValue" placeholder="cth: M / Merah" />
+              </div>
+              <div class="form-group">
+                <label>Penyesuaian Harga (Rp)</label
+                ><input type="number" id="variantPriceAdjustment" value="0" />
+              </div>
+            </div>
+            <button onclick="addVariant()" style="width: 100%">
+              Tambah Varian
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="toastContainer"></div>
+    <div
+      id="modalOverlay"
+      class="modal-overlay"
+      onclick="if (event.target === this) closeModal();"
+    >
+      <div class="modal" id="modalBox">
+        <div class="modal-top success" id="modalTop"></div>
+        <div class="modal-body">
+          <div class="modal-icon success" id="modalIcon">✓</div>
+          <h3 id="modalTitle">Berhasil!</h3>
+          <p id="modalMsg">Produk berhasil ditambahkan</p>
+          <div
+            id="modalDetail"
+            class="modal-detail"
+            style="display: none"
+          ></div>
+          <button
+            class="modal-btn success"
+            id="modalBtn"
+            onclick="closeModal()"
+          >
+            Mantap ✨
+          </button>
+        </div>
+      </div>
+    </div>
+    <script src="/js/role-nav.js"></script>
+    <script>
+      const apiBaseUrl = "/api";
+      let accessToken = localStorage.getItem("accessToken");
+      if (!accessToken) location.href = "/login.html";
+      function showToast(title, msg, type) {
+        var c = document.getElementById("toastContainer");
+        var icons = { success: "✓", error: "✕", warning: "⚠", info: "ℹ" };
+        var t = document.createElement("div");
+        t.className = "toast " + type;
+        t.innerHTML =
+          '<div class="toast-icon">' +
+          (icons[type] || "ℹ") +
+          '</div><div class="toast-body"><div class="toast-title">' +
+          title +
+          '</div><div class="toast-msg">' +
+          msg +
+          '</div></div><button class="toast-close" onclick="this.parentElement.remove()">×</button><div class="toast-progress"></div>';
+        c.appendChild(t);
+        setTimeout(function () {
+          t.style.animation = "toastOut .35s forwards";
+          setTimeout(function () {
+            if (t.parentNode) t.remove();
+          }, 350);
+        }, 3500);
+      }
+      function showModal(type, title, msg, detail) {
+        var o = document.getElementById("modalOverlay"),
+          top = document.getElementById("modalTop"),
+          icon = document.getElementById("modalIcon"),
+          ttl = document.getElementById("modalTitle"),
+          mm = document.getElementById("modalMsg"),
+          det = document.getElementById("modalDetail"),
+          btn = document.getElementById("modalBtn");
+        var icons = { success: "✓", error: "✕", warning: "⚠" };
+        var labels = {
+          success: "Mantap ✨",
+          error: "Mengerti",
+          warning: "Oke",
+        };
+        top.className = "modal-top " + type;
+        icon.className = "modal-icon " + type;
+        icon.textContent = icons[type] || "✓";
+        btn.className = "modal-btn " + type;
+        ttl.textContent = title;
+        mm.textContent = msg;
+        if (detail) {
+          det.innerHTML = detail;
+          det.style.display = "block";
+        } else det.style.display = "none";
+        btn.textContent = labels[type] || "Tutup";
+        o.classList.add("show");
+        if (type === "success") launchConfetti();
+      }
+      function closeModal() {
+        document.getElementById("modalOverlay").classList.remove("show");
+      }
+      function launchConfetti() {
+        var box = document.getElementById("modalBox");
+        var colors = [
+          "#27ae60",
+          "#2980b9",
+          "#f1c40f",
+          "#e74c3c",
+          "#9b59b6",
+          "#2ecc71",
+        ];
+        for (var i = 0; i < 18; i++) {
+          var c = document.createElement("div");
+          c.className = "confetti";
+          c.style.left = Math.random() * 100 + "%";
+          c.style.background = colors[i % colors.length];
+          c.style.animationDelay = Math.random() * 0.4 + "s";
+          c.style.transform = "rotate(" + Math.random() * 360 + "deg)";
+          c.style.borderRadius = Math.random() > 0.5 ? "50%" : "2px";
+          box.appendChild(c);
+          setTimeout(
+            (function (el) {
+              return function () {
+                if (el.parentNode) el.remove();
+              };
+            })(c),
+            1300,
+          );
+        }
+      }
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeModal();
+      });
+      async function loadProducts() {
+        try {
+          const r = await fetch(apiBaseUrl + "/products", {
+            headers: { Authorization: "Bearer " + accessToken },
+          });
+          if (r.ok) {
+            const d = await r.json();
+            const tb = document.getElementById("productsTable");
+            if (!d.products || d.products.length === 0)
+              tb.innerHTML =
+                '<tr><td colspan="8" style="text-align:center;color:#888">Belum ada produk (mode demo)</td></tr>';
+            else
+              tb.innerHTML = d.products
+                .map(function (p) {
+                  var m = (
+                    ((p.basePrice - p.costPrice) / p.basePrice) *
+                    100
+                  ).toFixed(1);
+                  return (
+                    "<tr><td>" +
+                    p.sku +
+                    "</td><td>" +
+                    p.name +
+                    "</td><td>" +
+                    p.category_id +
+                    "</td><td>Rp " +
+                    p.basePrice.toLocaleString("id-ID") +
+                    "</td><td>Rp " +
+                    p.costPrice.toLocaleString("id-ID") +
+                    "</td><td>" +
+                    m +
+                    "%</td><td>" +
+                    (p.is_active ? "Aktif" : "Nonaktif") +
+                    '</td><td><div class="action-buttons"><button onclick="loadVariants(' +
+                    p.id +
+                    ')">Varian</button><button class="danger" onclick="deactivateProduct(' +
+                    p.id +
+                    ')">Nonaktif</button></div></td></tr>'
+                  );
+                })
+                .join("");
+            var vs = document.getElementById("variantProductSelect");
+            vs.innerHTML =
+              '<option value="">Pilih produk…</option>' +
+              d.products
+                .map(function (p) {
+                  return '<option value="' + p.id + '">' + p.name + "</option>";
+                })
+                .join("");
+            var cs = document.getElementById("newProductCategory");
+            if (cs.options.length <= 5) {
+            }
+          } else {
+            document.getElementById("productsTable").innerHTML =
+              '<tr><td colspan="8" style="text-align:center;color:#888">Gagal memuat — mode demo tanpa DB</td></tr>';
+          }
+        } catch (e) {
+          document.getElementById("productsTable").innerHTML =
+            '<tr><td colspan="8" style="text-align:center;color:#888">Mode demo — hubungkan DB untuk data real</td></tr>';
+        }
+      }
+      async function addProduct() {
+        var skuEl = document.getElementById("newProductSku"),
+          nameEl = document.getElementById("newProductName"),
+          catEl = document.getElementById("newProductCategory"),
+          priceEl = document.getElementById("newProductPrice"),
+          costEl = document.getElementById("newProductCost");
+        var sku = skuEl?.value?.trim(),
+          name = nameEl?.value?.trim(),
+          cat = catEl?.value,
+          price = parseFloat(priceEl?.value),
+          cost = parseFloat(costEl?.value),
+          desc =
+            document.getElementById("newProductDescription")?.value?.trim() ||
+            "";
+        var missing = [];
+        if (!sku) missing.push("SKU");
+        if (!name) missing.push("Nama");
+        if (!cat) missing.push("Kategori");
+        if (!priceEl?.value || isNaN(price)) missing.push("Harga Jual");
+        if (!costEl?.value || isNaN(cost)) missing.push("Harga Modal");
+        if (missing.length) {
+          showModal(
+            "warning",
+            "Data belum lengkap ⚠️",
+            "Lengkapi field wajib: " + missing.join(", ") + ".",
+            null,
+          );
+          [skuEl, nameEl, catEl, priceEl, costEl].forEach(function (el) {
+            if (el && !el.value) el.style.borderColor = "#f39c12";
+            else if (el) el.style.borderColor = "#ddd";
+          });
+          showToast(
+            "Lengkapi data",
+            "Field kosong: " + missing.join(", "),
+            "warning",
+          );
+          return;
+        }
+        [skuEl, nameEl, catEl, priceEl, costEl].forEach(function (el) {
+          if (el) el.style.borderColor = "#ddd";
+        });
+        var btn = document.querySelector('button[onclick="addProduct()"]');
+        var oldBtn = btn ? btn.innerHTML : "";
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = "⏳ Menyimpan…";
+        }
+        try {
+          var r = await fetch(apiBaseUrl + "/products", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + accessToken,
+            },
+            body: JSON.stringify({
+              sku: sku,
+              name: name,
+              categoryId: parseInt(cat),
+              basePrice: price,
+              costPrice: cost,
+              description: desc,
+            }),
+          });
+          if (r.ok) {
+            var prod = await r.json();
+            showModal(
+              "success",
+              "Berhasil ditambahkan! 🎉",
+              'Produk "' + name + '" berhasil disimpan ke katalog.',
+              "<b>SKU:</b> " +
+                sku +
+                " &nbsp;|&nbsp; <b>Harga:</b> Rp " +
+                price.toLocaleString("id-ID") +
+                " &nbsp;|&nbsp; <b>Modal:</b> Rp " +
+                cost.toLocaleString("id-ID"),
+            );
+            showToast("Sukses", " Produk " + sku + " ditambahkan", "success");
+            [
+              "newProductSku",
+              "newProductName",
+              "newProductPrice",
+              "newProductCost",
+              "newProductDescription",
+            ].forEach(function (i) {
+              var e = document.getElementById(i);
+              if (e) e.value = "";
+            });
+            if (catEl) catEl.value = "";
+            loadProducts();
+          } else {
+            var e = await r.json();
+            var msg = e.error || "Gagal menambah produk";
+            if (msg.toLowerCase().includes("sku"))
+              showModal(
+                "error",
+                "SKU sudah ada ⚠️",
+                msg,
+                "Coba gunakan SKU lain yang unik.",
+              );
+            else if (msg.toLowerCase().includes("kategori"))
+              showModal("warning", "Kategori bermasalah", msg, null);
+            else showModal("error", "Gagal menyimpan", msg, null);
+            showToast("Gagal", msg, "error");
+          }
+        } catch (e) {
+          showModal(
+            "error",
+            "Koneksi gagal 📡",
+            "Gagal terhubung ke server. Periksa koneksi & coba lagi.",
+            null,
+          );
+          showToast("Koneksi gagal", "Tidak dapat menghubungi server", "error");
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = oldBtn;
+          }
+        }
+      }
+      async function searchProducts() {
+        var q = document.getElementById("searchProducts")?.value;
+        if (!q) {
+          loadProducts();
+          return;
+        }
+        try {
+          var r = await fetch(
+            apiBaseUrl + "/products?search=" + encodeURIComponent(q),
+            { headers: { Authorization: "Bearer " + accessToken } },
+          );
+          if (r.ok) {
+            var d = await r.json();
+            var tb = document.getElementById("productsTable");
+            tb.innerHTML = d.products
+              .map(function (p) {
+                var m = (
+                  ((p.basePrice - p.costPrice) / p.basePrice) *
+                  100
+                ).toFixed(1);
+                return (
+                  "<tr><td>" +
+                  p.sku +
+                  "</td><td>" +
+                  p.name +
+                  "</td><td>" +
+                  p.category_id +
+                  "</td><td>Rp " +
+                  p.basePrice.toLocaleString("id-ID") +
+                  "</td><td>Rp " +
+                  p.costPrice.toLocaleString("id-ID") +
+                  "</td><td>" +
+                  m +
+                  "%</td><td>" +
+                  (p.is_active ? "Aktif" : "Nonaktif") +
+                  '</td><td><button onclick="loadVariants(' +
+                  p.id +
+                  ')">Varian</button></td></tr>'
+                );
+              })
+              .join("");
+          }
+        } catch (e) {}
+      }
+      async function loadVariants(pid) {
+        try {
+          var r = await fetch(apiBaseUrl + "/products/" + pid + "/variants", {
+            headers: { Authorization: "Bearer " + accessToken },
+          });
+          if (r.ok) {
+            var vs = await r.json();
+            var tb = document.getElementById("variantsTable");
+            var c = document.getElementById("variantsList");
+            tb.innerHTML = vs
+              .map(function (v) {
+                return (
+                  "<tr><td>" +
+                  v.sku +
+                  "</td><td>" +
+                  v.name +
+                  "</td><td>" +
+                  (v.variant_value || "-") +
+                  "</td><td>Rp " +
+                  v.priceAdjustment.toLocaleString("id-ID") +
+                  '</td><td><button class="danger" onclick="deleteVariant(' +
+                  v.id +
+                  ')">Hapus</button></td></tr>'
+                );
+              })
+              .join("");
+            c.style.display = "block";
+            document.getElementById("variantProductSelect").value = pid;
+          }
+        } catch (e) {}
+      }
+      async function addVariant() {
+        var pid = document.getElementById("variantProductSelect")?.value,
+          sku = document.getElementById("variantSku")?.value?.trim(),
+          name = document.getElementById("variantName")?.value?.trim(),
+          val = document.getElementById("variantValue")?.value?.trim() || null,
+          adj = parseFloat(
+            document.getElementById("variantPriceAdjustment")?.value || 0,
+          );
+        if (!pid || !sku || !name) {
+          showModal(
+            "warning",
+            "Data varian belum lengkap",
+            "Lengkapi produk induk, SKU varian & nama varian.",
+            null,
+          );
+          showToast(
+            "Lengkapi data",
+            "Pilih produk & isi SKU/nama varian",
+            "warning",
+          );
+          return;
+        }
+        try {
+          var r = await fetch(apiBaseUrl + "/products/" + pid + "/variants", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + accessToken,
+            },
+            body: JSON.stringify({
+              productId: parseInt(pid),
+              sku: sku,
+              name: name,
+              variantValue: val,
+              priceAdjustment: adj,
+            }),
+          });
+          if (r.ok) {
+            showModal(
+              "success",
+              "Varian ditambahkan! ✨",
+              'Varian "' + name + '" (' + sku + ") berhasil disimpan.",
+              "<b>Produk ID:</b> " +
+                pid +
+                " &nbsp;|&nbsp; <b>Penyesuaian:</b> Rp " +
+                (adj || 0).toLocaleString("id-ID"),
+            );
+            showToast("Varian sukses", " " + sku + " ditambahkan", "success");
+            ["variantSku", "variantName", "variantValue"].forEach(function (i) {
+              var e = document.getElementById(i);
+              if (e) e.value = "";
+            });
+            document.getElementById("variantPriceAdjustment").value = "0";
+            loadVariants(pid);
+          } else {
+            var e = await r.json();
+            showModal("error", "Gagal tambah varian", e.error || "Gagal", null);
+            showToast("Gagal", e.error || "Gagal", "error");
+          }
+        } catch (e) {
+          showModal(
+            "error",
+            "Koneksi gagal",
+            "Tidak dapat menambah varian.",
+            null,
+          );
+          showToast("Gagal", "Koneksi error", "error");
+        }
+      }
+      function deactivateProduct(id) {
+        showModal(
+          "warning",
+          "Segera hadir 🚧",
+          "Fitur nonaktifkan produk akan segera tersedia.",
+          null,
+        );
+      }
+      function deleteVariant(id) {
+        showModal(
+          "warning",
+          "Segera hadir 🚧",
+          "Fitur hapus varian akan segera tersedia.",
+          null,
+        );
+      }
+      loadProducts();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Laporan & Analitik - Sistem POS</title>
+    <link rel="stylesheet" href="/css/reports.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <h2>Sistem POS</h2>
+        <div class="role-hint" id="sidebarHint">Memuat peran…</div>
+        <ul>
+          <li data-allow="cashier"><a href="/index.html">🧾 Kasir POS</a></li>
+          <li data-allow="super_admin,manager">
+            <a href="/products.html">📦 Katalog Produk</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/inventory.html">📊 Stok & Inventaris</a>
+          </li>
+          <li data-allow="super_admin,manager">
+            <a href="/reports.html" class="active">📈 Laporan & Analitik</a>
+          </li>
+          <li data-allow="super_admin">
+            <a href="/admin.html" class="admin-only">👑 Dasbor Pemilik</a>
+          </li>
+        </ul>
+        <hr
+          style="margin: 14px 0; border: none; border-top: 1px solid #3d566e"
+        />
+        <div style="font-size: 11px; opacity: 0.7">
+          Kasir tidak memiliki akses laporan. Hanya Manajer & Pemilik.
+        </div>
+        <button
+          onclick="logout()"
+          class="danger"
+          style="width: 100%; margin-top: 12px"
+        >
+          Keluar
+        </button>
+      </div>
+      <div class="main-content">
+        <div class="header">
+          <div>
+            <h1>
+              Laporan & Analitik
+              <small
+                >Realtime per outlet — agregasi harian/mingguan/bulanan</small
+              >
+            </h1>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <div
+              id="outletSwitcher"
+              style="display: none; gap: 6px; align-items: center"
+            >
+              <label style="font-size: 11px">Cabang:</label
+              ><select
+                id="outletSelect"
+                onchange="
+                  loadSalesSummary();
+                  loadTopSellingProducts();
+                  loadCashierPerformance();
+                  loadRecentTransactions();
+                "
+                style="
+                  padding: 5px;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                  font-size: 12px;
+                "
+              >
+                <option value="">Semua Cabang</option>
+              </select>
+            </div>
+            <div
+              id="outletBadge"
+              style="
+                display: none;
+                gap: 6px;
+                align-items: center;
+                background: #eaf2f8;
+                border: 1px solid #bfdbfe;
+                padding: 5px 10px;
+                border-radius: 6px;
+                font-size: 11px;
+                color: #1e40af;
+                font-weight: 600;
+              "
+            >
+              🏪 <span id="outletBadgeText">Memuat cabang…</span>
+            </div>
+            <span id="roleBadge" class="role-badge">Memuat…</span>
+            <span id="userDisplay" style="font-size: 12px; color: #555"></span>
+          </div>
+        </div>
+        <div class="content">
+          <div id="guardMsg"></div>
+          <div class="info-role">
+            Halaman ini khusus <b>Manajer & Pemilik</b>. Kasir akan dialihkan
+            otomatis ke Kasir POS.
+          </div>
+
+          <div class="card">
+            <h3>📊 Ringkasan Penjualan</h3>
+            <p class="desc">
+              Agregasi realtime harian, mingguan, bulanan per outlet.
+            </p>
+            <div class="filter-bar">
+              <input type="date" id="summaryStartDate" /><input
+                type="date"
+                id="summaryEndDate"
+              />
+              <select id="summaryPeriod">
+                <option value="daily">Harian</option>
+                <option value="weekly">Mingguan</option>
+                <option value="monthly">Bulanan</option>
+              </select>
+              <button onclick="loadSalesSummary()">Tampilkan</button
+              ><button class="secondary" onclick="exportReport('sales')">
+                Ekspor CSV
+              </button>
+            </div>
+            <div class="stats-grid" id="summaryStats"></div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Periode</th>
+                  <th>Jml Transaksi</th>
+                  <th>Subtotal</th>
+                  <th>Diskon</th>
+                  <th>Pajak</th>
+                  <th>Pendapatan</th>
+                </tr>
+              </thead>
+              <tbody id="summaryTable">
+                <tr>
+                  <td colspan="6" style="text-align: center; color: #888">
+                    Belum ada data
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <h3>🏆 Produk Terlaris</h3>
+            <p class="desc">
+              GROUP BY & ORDER BY teroptimasi dengan indexing tanggal transaksi.
+            </p>
+            <div class="filter-bar">
+              <input type="date" id="topStartDate" /><input
+                type="date"
+                id="topEndDate"
+              /><input
+                type="number"
+                id="topLimit"
+                value="10"
+                min="1"
+                max="50"
+              />
+              <button onclick="loadTopSellingProducts()">Tampilkan</button
+              ><button class="secondary" onclick="exportReport('top-selling')">
+                Ekspor
+              </button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Peringkat</th>
+                  <th>SKU</th>
+                  <th>Nama Produk</th>
+                  <th>Qty Terjual</th>
+                  <th>Pendapatan</th>
+                  <th>Rata-rata Harga</th>
+                </tr>
+              </thead>
+              <tbody id="topSellingTable"></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <h3>🧑‍💼 Performa Kasir</h3>
+            <div class="filter-bar">
+              <input type="date" id="cashierStartDate" /><input
+                type="date"
+                id="cashierEndDate"
+              />
+              <button onclick="loadCashierPerformance()">Tampilkan</button
+              ><button class="secondary" onclick="exportReport('cashier')">
+                Ekspor
+              </button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Nama Kasir</th>
+                  <th>Jml Transaksi</th>
+                  <th>Total Pendapatan</th>
+                  <th>Rata-rata Transaksi</th>
+                  <th>Total Diskon</th>
+                </tr>
+              </thead>
+              <tbody id="cashierTable"></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <h3>🧾 Transaksi Terkini</h3>
+            <div class="filter-bar">
+              <input type="date" id="txnStartDate" /><input
+                type="date"
+                id="txnEndDate"
+              />
+              <button onclick="loadRecentTransactions()">Muat</button
+              ><button class="secondary" onclick="exportReport('transactions')">
+                Ekspor
+              </button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>No. Transaksi</th>
+                  <th>Kasir</th>
+                  <th>Total</th>
+                  <th>Metode Bayar</th>
+                  <th>Tanggal</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="transactionsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/js/role-nav.js"></script>
+    <script>
+      const apiBaseUrl = "/api";
+      let accessToken = localStorage.getItem("accessToken");
+      if (!accessToken) location.href = "/login.html";
+      function getReportRole() {
+        try {
+          var p = JSON.parse(
+            decodeURIComponent(
+              atob(
+                accessToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"),
+              )
+                .split("")
+                .map(function (c) {
+                  return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+                })
+                .join(""),
+            ),
+          );
+          return {
+            role: p.role,
+            outletId: p.outletId ? String(p.outletId) : "",
+          };
+        } catch (_) {
+          return { role: localStorage.getItem("userRole") || "", outletId: "" };
+        }
+      }
+      function outletQ() {
+        var ro = getReportRole();
+        if (ro.role !== "super_admin" && ro.outletId)
+          return "&outletId=" + encodeURIComponent(ro.outletId);
+        var sel = document.getElementById("outletSelect");
+        return sel && sel.value
+          ? "&outletId=" + encodeURIComponent(sel.value)
+          : "";
+      }
+      function outletQ2() {
+        var ro = getReportRole();
+        if (ro.role !== "super_admin" && ro.outletId)
+          return "outletId=" + encodeURIComponent(ro.outletId);
+        var sel = document.getElementById("outletSelect");
+        return sel && sel.value
+          ? "outletId=" + encodeURIComponent(sel.value)
+          : "";
+      }
+      async function loadOutlets() {
+        var ro = getReportRole();
+        var isAdmin = ro.role === "super_admin";
+        var wrap = document.getElementById("outletSwitcher");
+        var badge = document.getElementById("outletBadge");
+        var badgeText = document.getElementById("outletBadgeText");
+        if (!isAdmin) {
+          if (wrap) wrap.style.display = "none";
+          if (badge) badge.style.display = "flex";
+          if (badgeText && ro.outletId && !badgeText.dataset.loaded) {
+            badgeText.textContent = "Cabang #" + ro.outletId;
+            fetch(apiBaseUrl + "/outlets", {
+              headers: { Authorization: "Bearer " + accessToken },
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (d) {
+                var list = d.outlets || [];
+                var f = list.find(function (o) {
+                  return String(o.id) === String(ro.outletId);
+                });
+                if (f) {
+                  badgeText.textContent = f.name + " - " + (f.city || "");
+                  badgeText.dataset.loaded = "1";
+                }
+              })
+              .catch(function () {});
+          }
+          return;
+        }
+        try {
+          var r = await fetch(apiBaseUrl + "/outlets", {
+            headers: { Authorization: "Bearer " + accessToken },
+          });
+          if (!r.ok) return;
+          var d = await r.json();
+          var list = d.outlets || [];
+          var sel = document.getElementById("outletSelect");
+          if (!sel) return;
+          var cur = sel.value;
+          sel.innerHTML =
+            '<option value="">Semua Cabang</option>' +
+            list
+              .map(function (o) {
+                return (
+                  '<option value="' +
+                  o.id +
+                  '">' +
+                  o.name +
+                  " - " +
+                  (o.city || "") +
+                  "</option>"
+                );
+              })
+              .join("");
+          if (cur) sel.value = cur;
+          if (wrap) wrap.style.display = "flex";
+          if (badge) badge.style.display = "none";
+        } catch (e) {}
+      }
+      async function loadSalesSummary() {
+        const s = document.getElementById("summaryStartDate")?.value,
+          e = document.getElementById("summaryEndDate")?.value,
+          p = document.getElementById("summaryPeriod")?.value || "daily";
+        try {
+          let url =
+            apiBaseUrl + "/reports/sales-summary?period=" + p + outletQ();
+          if (s) url += "&startDate=" + s;
+          if (e) url += "&endDate=" + e;
+          const r = await fetch(url, {
+            headers: { Authorization: "Bearer " + accessToken },
+          });
+          if (r.ok) {
+            const d = await r.json();
+            const tb = document.getElementById("summaryTable");
+            const sc = document.getElementById("summaryStats");
+            if (d.summary && d.summary.length > 0) {
+              const rev = d.summary.reduce((a, b) => a + b.totalRevenue, 0),
+                trx = d.summary.reduce((a, b) => a + b.transactionCount, 0),
+                disc = d.summary.reduce((a, b) => a + b.totalDiscount, 0),
+                tax = d.summary.reduce((a, b) => a + b.totalTax, 0);
+              sc.innerHTML =
+                '<div class="stat-card"><h4>Total Pendapatan</h4><div class="value">Rp ' +
+                rev.toLocaleString("id-ID") +
+                '</div></div><div class="stat-card" style="background:linear-gradient(135deg,#11998e,#38ef7d)"><h4>Total Transaksi</h4><div class="value">' +
+                trx +
+                '</div></div><div class="stat-card" style="background:linear-gradient(135deg,#f46b45,#eea849)"><h4>Total Diskon</h4><div class="value">Rp ' +
+                disc.toLocaleString("id-ID") +
+                '</div></div><div class="stat-card" style="background:linear-gradient(135deg,#8e2de2,#4a00e0)"><h4>Total Pajak</h4><div class="value">Rp ' +
+                tax.toLocaleString("id-ID") +
+                "</div></div>";
+            } else sc.innerHTML = "";
+            if (!d.summary || d.summary.length === 0)
+              tb.innerHTML =
+                '<tr><td colspan="6" style="text-align:center;color:#888">Belum ada transaksi — lakukan pembayaran di Kasir, lalu Muat Ulang laporan ini.</td></tr>';
+            else
+              tb.innerHTML = d.summary
+                .map(function (it) {
+                  return (
+                    "<tr><td>" +
+                    new Date(it.period).toLocaleDateString("id-ID") +
+                    "</td><td>" +
+                    it.transactionCount +
+                    "</td><td>Rp " +
+                    it.totalSubtotal.toLocaleString("id-ID") +
+                    "</td><td>Rp " +
+                    it.totalDiscount.toLocaleString("id-ID") +
+                    "</td><td>Rp " +
+                    it.totalTax.toLocaleString("id-ID") +
+                    "</td><td><b>Rp " +
+                    it.totalRevenue.toLocaleString("id-ID") +
+                    "</b></td></tr>"
+                  );
+                })
+                .join("");
+          } else {
+            const er = await r.json().catch(function () {
+              return {};
+            });
+            document.getElementById("summaryTable").innerHTML =
+              '<tr><td colspan="6" style="text-align:center;color:#c0392b">' +
+              (er.error || "Gagal memuat") +
+              "</td></tr>";
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Gagal memuat ringkasan penjualan");
+        }
+      }
+      async function loadTopSellingProducts() {
+        const s = document.getElementById("topStartDate")?.value,
+          e = document.getElementById("topEndDate")?.value,
+          l = document.getElementById("topLimit")?.value || 10;
+        try {
+          let url = apiBaseUrl + "/reports/top-selling?limit=" + l + outletQ();
+          if (s) url += "&startDate=" + s;
+          if (e) url += "&endDate=" + e;
+          const r = await fetch(url, {
+            headers: { Authorization: "Bearer " + accessToken },
+          });
+          if (r.ok) {
+            const d = await r.json();
+            const tb = document.getElementById("topSellingTable");
+            if (!d.topProducts || d.topProducts.length === 0)
+              tb.innerHTML =
+                '<tr><td colspan="6" style="text-align:center;color:#888">Belum ada penjualan — data mengikuti transaksi DB</td></tr>';
+            else
+              tb.innerHTML = d.topProducts
+                .map(function (it, i) {
+                  return (
+                    "<tr><td>" +
+                    (i + 1) +
+                    "</td><td>" +
+                    it.sku +
+                    "</td><td>" +
+                    it.name +
+                    "</td><td>" +
+                    it.totalQuantity +
+                    "</td><td>Rp " +
+                    it.totalRevenue.toLocaleString("id-ID") +
+                    "</td><td>Rp " +
+                    it.averagePrice.toLocaleString("id-ID") +
+                    "</td></tr>"
+                  );
+                })
+                .join("");
+          }
+        } catch (e) {
+          alert("Gagal memuat produk terlaris");
+        }
+      }
+      async function loadCashierPerformance() {
+        const s = document.getElementById("cashierStartDate")?.value,
+          e = document.getElementById("cashierEndDate")?.value;
+        try {
+          let base = apiBaseUrl + "/reports/cashier-performance";
+          let q = [];
+          let oq = outletQ2();
+          if (oq) q.push(oq);
+          if (s) q.push("startDate=" + s);
+          if (e) q.push("endDate=" + e);
+          let url = base + (q.length ? "?" + q.join("&") : "");
+          const r = await fetch(url, {
+            headers: { Authorization: "Bearer " + accessToken },
+          });
+          if (r.ok) {
+            const d = await r.json();
+            const tb = document.getElementById("cashierTable");
+            if (!d.cashierPerformance || d.cashierPerformance.length === 0)
+              tb.innerHTML =
+                '<tr><td colspan="5" style="text-align:center;color:#888">Belum ada data</td></tr>';
+            else
+              tb.innerHTML = d.cashierPerformance
+                .map(function (it) {
+                  return (
+                    "<tr><td>" +
+                    it.cashierName +
+                    "</td><td>" +
+                    it.transactionCount +
+                    "</td><td>Rp " +
+                    it.totalRevenue.toLocaleString("id-ID") +
+                    "</td><td>Rp " +
+                    it.averageTransactionValue.toLocaleString("id-ID") +
+                    "</td><td>Rp " +
+                    it.totalDiscount.toLocaleString("id-ID") +
+                    "</td></tr>"
+                  );
+                })
+                .join("");
+          }
+        } catch (e) {
+          alert("Gagal memuat performa kasir");
+        }
+      }
+      async function loadRecentTransactions() {
+        const s = document.getElementById("txnStartDate")?.value,
+          e = document.getElementById("txnEndDate")?.value;
+        try {
+          let base = apiBaseUrl + "/transactions";
+          let q = [];
+          let oq = outletQ2();
+          if (oq) q.push(oq);
+          if (s) q.push("startDate=" + s);
+          if (e) q.push("endDate=" + e);
+          let url = base + (q.length ? "?" + q.join("&") : "");
+          const r = await fetch(url, {
+            headers: { Authorization: "Bearer " + accessToken },
+          });
+          if (r.ok) {
+            const d = await r.json();
+            const tb = document.getElementById("transactionsTable");
+            const arr = Array.isArray(d) ? d : d.transactions || [];
+            if (arr.length === 0)
+              tb.innerHTML =
+                '<tr><td colspan="6" style="text-align:center;color:#888">Belum ada transaksi — bayar di Kasir untuk melihat riwayat di sini</td></tr>';
+            else
+              tb.innerHTML = arr
+                .map(function (it) {
+                  return (
+                    "<tr><td>" +
+                    it.transactionNumber +
+                    "</td><td>" +
+                    it.cashierName +
+                    "</td><td>Rp " +
+                    (it.totalAmount || 0).toLocaleString("id-ID") +
+                    "</td><td>" +
+                    it.paymentMethod +
+                    "</td><td>" +
+                    new Date(it.createdAt).toLocaleString("id-ID") +
+                    '</td><td><button class="secondary" onclick="viewTransactionDetails(' +
+                    it.id +
+                    ')">Lihat</button></td></tr>'
+                  );
+                })
+                .join("");
+          }
+        } catch (e) {
+          alert("Gagal memuat transaksi");
+        }
+      }
+      async function exportReport(t) {
+        try {
+          let url = apiBaseUrl + "/reports/export?reportType=" + t + outletQ();
+          if (t === "sales") {
+            const s = document.getElementById("summaryStartDate")?.value,
+              e = document.getElementById("summaryEndDate")?.value;
+            if (s) url += "&startDate=" + s;
+            if (e) url += "&endDate=" + e;
+          }
+          const r = await fetch(url, {
+            headers: { Authorization: "Bearer " + accessToken },
+          });
+          if (r.ok) {
+            const b = await r.blob();
+            const u = URL.createObjectURL(b);
+            const a = document.createElement("a");
+            a.href = u;
+            a.download = "laporan-" + t + "-" + Date.now() + ".csv";
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(u);
+            a.remove();
+          }
+        } catch (e) {
+          alert("Gagal ekspor laporan");
+        }
+      }
+      function viewTransactionDetails(id) {
+        alert("Detail transaksi #" + id + " — akan menampilkan rincian items");
+      }
+      (async function init() {
+        await loadOutlets();
+        loadSalesSummary();
+        loadTopSellingProducts();
+        loadCashierPerformance();
+        loadRecentTransactions();
+      })();
+    </script>
+  </body>
+</html>
