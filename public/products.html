@@ -231,6 +231,7 @@
     </div>
     <script src="/js/role-nav.js"></script>
     <script>
+      function fmtIDR(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Math.round(Number(n)||0));}
       const apiBaseUrl = "/api";
       let accessToken = localStorage.getItem("accessToken");
       if (!accessToken) location.href = "/login.html";
@@ -343,10 +344,8 @@
                     p.name +
                     "</td><td>" +
                     p.category_id +
-                    "</td><td>Rp " +
-                    p.basePrice.toLocaleString("id-ID") +
-                    "</td><td>Rp " +
-                    p.costPrice.toLocaleString("id-ID") +
+                    "</td><td>" + fmtIDR(p.basePrice) +
+                    "</td><td>" + fmtIDR(p.costPrice) +
                     "</td><td>" +
                     m +
                     "%</td><td>" +
@@ -450,10 +449,8 @@
               'Produk "' + name + '" berhasil disimpan ke katalog.',
               "<b>SKU:</b> " +
                 sku +
-                " &nbsp;|&nbsp; <b>Harga:</b> Rp " +
-                price.toLocaleString("id-ID") +
-                " &nbsp;|&nbsp; <b>Modal:</b> Rp " +
-                cost.toLocaleString("id-ID"),
+                " &nbsp;|&nbsp; <b>Harga:</b> " + fmtIDR(price) +
+                " &nbsp;|&nbsp; <b>Modal:</b> " + fmtIDR(cost),
             );
             showToast("Sukses", " Produk " + sku + " ditambahkan", "success");
             [
@@ -525,10 +522,8 @@
                   p.name +
                   "</td><td>" +
                   p.category_id +
-                  "</td><td>Rp " +
-                  p.basePrice.toLocaleString("id-ID") +
-                  "</td><td>Rp " +
-                  p.costPrice.toLocaleString("id-ID") +
+                  "</td><td>" + fmtIDR(p.basePrice) +
+                  "</td><td>" + fmtIDR(p.costPrice) +
                   "</td><td>" +
                   m +
                   "%</td><td>" +
@@ -560,8 +555,7 @@
                   v.name +
                   "</td><td>" +
                   (v.variant_value || "-") +
-                  "</td><td>Rp " +
-                  v.priceAdjustment.toLocaleString("id-ID") +
+                  "</td><td>" + fmtIDR(v.priceAdjustment) +
                   '</td><td><button class="danger" onclick="deleteVariant(' +
                   v.id +
                   ')">Hapus</button></td></tr>'
@@ -617,8 +611,7 @@
               'Varian "' + name + '" (' + sku + ") berhasil disimpan.",
               "<b>Produk ID:</b> " +
                 pid +
-                " &nbsp;|&nbsp; <b>Penyesuaian:</b> Rp " +
-                (adj || 0).toLocaleString("id-ID"),
+                " &nbsp;|&nbsp; <b>Penyesuaian:</b> " + fmtIDR(adj||0),
             );
             showToast("Varian sukses", " " + sku + " ditambahkan", "success");
             ["variantSku", "variantName", "variantValue"].forEach(function (i) {

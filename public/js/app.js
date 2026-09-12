@@ -1,3 +1,5 @@
+function fmtIDR(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Math.round(Number(n)||0));}
+function fmtNum(n){return Math.round(Number(n)||0).toLocaleString('id-ID');}
 class POSApp {
   constructor() {
     this.apiBaseUrl = "/api";
@@ -178,7 +180,7 @@ class POSApp {
       <div class="product-card">
         <div class="product-name">${product.name}</div>
         <div class="product-sku">${product.sku}</div>
-        <div class="product-price">Rp ${product.basePrice.toLocaleString("id-ID")}</div>
+        <div class="product-price">${fmtIDR(product.basePrice)}</div>
         <button onclick="posApp.addProductToCart({id: ${product.id}, name: '${product.name.replace(/'/g, "\\'")}', basePrice: ${product.basePrice}, sku: '${product.sku}'})">+ Keranjang</button>
       </div>
     `,
@@ -214,11 +216,11 @@ class POSApp {
   updateCartDisplay() {
     const cartTable = document.getElementById("cartItems");
     if (!cartTable) return;
-    const subtotal = this.calculateSubtotal();
-    const discount = this.calculateDiscount();
+    const subtotal = Math.round(this.calculateSubtotal());
+    const discount = Math.round(this.calculateDiscount());
     const taxRate =
       parseFloat(document.getElementById("taxRate")?.value || 0) / 100;
-    const tax = (subtotal - discount) * taxRate;
+    const tax = Math.round((subtotal - discount) * taxRate);
     const total = subtotal - discount + tax;
     if (this.cart.length === 0) {
       cartTable.innerHTML =
@@ -230,8 +232,8 @@ class POSApp {
         <tr>
           <td>${item.name}</td>
           <td><input type="number" value="${item.quantity}" min="1" onchange="posApp.updateCartItemQuantity(${item.productId}, this.value)"></td>
-          <td>Rp ${item.unitPrice.toLocaleString("id-ID")}</td>
-          <td>Rp ${(item.quantity * item.unitPrice).toLocaleString("id-ID")}</td>
+          <td>${fmtIDR(item.unitPrice)}</td>
+          <td>${fmtIDR(item.quantity * item.unitPrice)}</td>
           <td><button class="danger" style="padding:5px 8px;font-size:11px" onclick="posApp.removeFromCart(${item.productId})">Hapus</button></td>
         </tr>
       `,
@@ -239,31 +241,21 @@ class POSApp {
         .join("");
     }
     if (document.getElementById("subtotal")) {
-      document.getElementById("subtotal").textContent =
-        "Rp " + subtotal.toLocaleString("id-ID");
-      document.getElementById("discountAmount").textContent =
-        "Rp " + discount.toLocaleString("id-ID");
-      document.getElementById("taxAmount").textContent =
-        "Rp " + tax.toLocaleString("id-ID");
-      document.getElementById("totalAmount").textContent =
-        "Rp " + total.toLocaleString("id-ID");
+      document.getElementById("subtotal").textContent = fmtIDR(subtotal);
+      document.getElementById("discountAmount").textContent = fmtIDR(discount);
+      document.getElementById("taxAmount").textContent = fmtIDR(tax);
+      document.getElementById("totalAmount").textContent = fmtIDR(total);
     }
   }
   calculateSubtotal() {
-    return this.cart.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice,
-      0,
-    );
+    return Math.round(this.cart.reduce((sum, item) => sum + item.quantity * item.unitPrice,0));
   }
   calculateDiscount() {
-    const discountType =
-      document.getElementById("discountType")?.value || "nominal";
-    const discountValue = parseFloat(
-      document.getElementById("discountValue")?.value || 0,
-    );
+    const discountType = document.getElementById("discountType")?.value || "nominal";
+    const discountValue = parseFloat(document.getElementById("discountValue")?.value || 0);
     const subtotal = this.calculateSubtotal();
-    if (discountType === "percentage") return (subtotal * discountValue) / 100;
-    return discountValue;
+    if (discountType === "percentage") return Math.round((subtotal * discountValue) / 100);
+    return Math.round(discountValue);
   }
   async completeTransaction() {
     if (this.cart.length === 0) {
@@ -281,18 +273,12 @@ class POSApp {
     const paidAmount = parseFloat(
       document.getElementById("paidAmount")?.value || 0,
     );
-    const subtotal = this.calculateSubtotal();
-    const discount = this.calculateDiscount();
-    const tax = (subtotal - discount) * (taxRate / 100);
+    const subtotal = Math.round(this.calculateSubtotal());
+    const discount = Math.round(this.calculateDiscount());
+    const tax = Math.round((subtotal - discount) * (taxRate / 100));
     const total = subtotal - discount + tax;
     if (paidAmount < total) {
-      this.showPayError(
-        "Pembayaran kurang",
-        "Jumlah bayar Rp " +
-          paidAmount.toLocaleString("id-ID") +
-          " kurang dari total Rp " +
-          total.toLocaleString("id-ID"),
-      );
+      this.showPayError("Pembayaran kurang","Jumlah bayar "+fmtIDR(paidAmount)+" kurang dari total "+fmtIDR(total));
       return;
     }
     const outletSel = document.getElementById("outletSelect");
@@ -388,26 +374,9 @@ class POSApp {
       { cash: "Tunai", card: "Kartu", transfer: "Transfer" }[pm] || pm;
     if (detail) {
       detail.innerHTML =
-        '<div class="pay-row"><span>Items</span><b>' +
-        savedCart.length +
-        ' produk</b></div><div class="pay-row"><span>Subtotal</span><span>Rp ' +
-        (transaction.subtotal || 0).toLocaleString("id-ID") +
-        '</span></div><div class="pay-row"><span>Diskon</span><span>- Rp ' +
-        (transaction.discount || 0).toLocaleString("id-ID") +
-        '</span></div><div class="pay-row"><span>Pajak</span><span>Rp ' +
-        (transaction.taxAmount || 0).toLocaleString("id-ID") +
-        '</span></div><div class="pay-row total" style="border-top:1px solid #e2e8f0;margin-top:6px;padding-top:8px"><span><b>Total Bayar</b></span><b>Rp ' +
-        (transaction.totalAmount || 0).toLocaleString("id-ID") +
-        '</b></div><div class="pay-row"><span>Metode</span><span>' +
-        pmLabel +
-        '</span></div><div class="pay-row"><span>Dibayar</span><span>Rp ' +
-        (transaction.paidAmount || 0).toLocaleString("id-ID") +
-        "</span></div>";
+        '<div class="pay-row"><span>Items</span><b>' + savedCart.length + ' produk</b></div><div class="pay-row"><span>Subtotal</span><span>' + fmtIDR(transaction.subtotal||0) + '</span></div><div class="pay-row"><span>Diskon</span><span>- ' + fmtIDR(transaction.discount||0) + '</span></div><div class="pay-row"><span>Pajak</span><span>' + fmtIDR(transaction.taxAmount||0) + '</span></div><div class="pay-row total" style="border-top:1px solid #e2e8f0;margin-top:6px;padding-top:8px"><span><b>Total Bayar</b></span><b>' + fmtIDR(transaction.totalAmount||0) + '</b></div><div class="pay-row"><span>Metode</span><span>' + pmLabel + '</span></div><div class="pay-row"><span>Dibayar</span><span>' + fmtIDR(transaction.paidAmount||0) + "</span></div>";
     }
-    if (kembali)
-      kembali.innerHTML =
-        "💰 Kembalian &nbsp; Rp " +
-        (transaction.changeAmount || 0).toLocaleString("id-ID");
+    if (kembali) kembali.innerHTML = "\uD83D\uDCB0 Kembalian &nbsp; " + fmtIDR(transaction.changeAmount||0);
     var overlay = document.getElementById("payOverlay");
     if (overlay) overlay.classList.add("show");
     this.launchPayConfetti();
@@ -475,20 +444,45 @@ class POSApp {
     if (!transaction) return;
     const receiptWindow = window.open("", "", "width=400,height=600");
     if (!receiptWindow) return;
+    const f = (n)=> new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Math.round(Number(n)||0));
+    const d = new Date().toLocaleString('id-ID',{dateStyle:'short',timeStyle:'short'});
     const receiptHTML = `
-      <html><head><title>Struk</title><style>body{font-family:monospace;width:80mm;margin:0 auto;padding:12px} .header{text-align:center;margin-bottom:16px;border-bottom:1px dashed #000;padding-bottom:10px} .items{margin-bottom:14px} .item{display:flex;justify-content:space-between;font-size:12px;padding:3px 0} .total{border-top:1px solid;padding-top:8px;font-weight:bold} h3{margin:0 0 4px}</style></head>
+      <html><head><title>Struk - ${transaction.transactionNumber||'TRX'}</title><style>
+        @page{size:80mm auto;margin:0} *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Courier New',Courier,monospace;background:#f1f5f9;display:flex;justify-content:center;padding:18px 0}
+        .paper{width:72mm;background:#fffdf7;color:#0f172a;padding:12px 12px 14px;position:relative;box-shadow:0 2px 18px rgba(0,0,0,.12)}
+        .paper:before{content:'';position:absolute;top:-7px;left:0;right:0;height:7px;background:radial-gradient(circle at 6px 7px, transparent 6px, #fffdf7 6.5px);background-size:12px 7px;background-repeat:repeat-x}
+        .head{text-align:center;padding-bottom:10px;border-bottom:1.5px dashed #334155}
+        .brand{font-size:13px;font-weight:800;letter-spacing:.08em}
+        .meta{font-size:10.5px;color:#475569;margin-top:3px;line-height:1.4}
+        .items{margin:10px 0}
+        .row{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;padding:4px 0;border-bottom:1px dashed #e2e8f0}
+        .row:last-child{border:none}
+        .qty{color:#64748b;flex-shrink:0}
+        .name{flex:1}
+        .price{text-align:right;white-space:nowrap;font-weight:700}
+        .sum{border-top:1.5px dashed #334155;border-bottom:1.5px dashed #334155;padding:8px 0;margin:10px 0}
+        .sum-row{display:flex;justify-content:space-between;font-size:11.5px;padding:2.5px 0}
+        .sum-row.total{font-weight:800;font-size:12.5px;border-top:1px solid #0f172a;margin-top:6px;padding-top:7px}
+        .foot{text-align:center;font-size:10px;color:#64748b;margin-top:10px;line-height:1.5}
+        .cut{border-top:2px dotted #cbd5e1;margin-top:10px}
+        @media print{body{background:#fff;padding:0}.paper{box-shadow:none;width:80mm}}
+      </style></head>
         <body>
-          <div class="header"><h3>STRUK PEMBAYARAN</h3><p style="font-size:11px">${transaction.transactionNumber || "TRX-" + Date.now()}</p><p style="font-size:11px">${new Date().toLocaleString("id-ID")}</p></div>
-          <div class="items">${items.map((item) => `<div class="item"><span>${item.name} x${item.quantity}</span><span>Rp ${(item.quantity * item.unitPrice).toLocaleString("id-ID")}</span></div>`).join("")}</div>
-          <div class="total">
-            <div class="item"><span>Subtotal:</span><span>Rp ${(transaction.subtotal || 0).toLocaleString("id-ID")}</span></div>
-            <div class="item"><span>Diskon:</span><span>Rp ${(transaction.discount || 0).toLocaleString("id-ID")}</span></div>
-            <div class="item"><span>Pajak:</span><span>Rp ${(transaction.taxAmount || 0).toLocaleString("id-ID")}</span></div>
-            <div class="item"><span>Total:</span><span>Rp ${(transaction.totalAmount || 0).toLocaleString("id-ID")}</span></div>
-            <div class="item"><span>Bayar:</span><span>Rp ${(transaction.paidAmount || 0).toLocaleString("id-ID")}</span></div>
-            <div class="item"><span>Kembali:</span><span>Rp ${(transaction.changeAmount || 0).toLocaleString("id-ID")}</span></div>
+          <div class="paper">
+            <div class="head"><div class="brand">POS MULTI-OUTLET</div><div class="meta">${transaction.transactionNumber||'TRX-'+Date.now()}<br>${d}<br>${document.getElementById('outletBadgeText')?.textContent||'Outlet Aktif'}</div></div>
+            <div class="items">${items.map((it)=>`<div class="row"><span class="name">${it.name} <span class="qty">x${it.quantity}</span></span><span class="price">${f(it.quantity*it.unitPrice)}</span></div>`).join('')}</div>
+            <div class="sum">
+              <div class="sum-row"><span>Subtotal</span><span>${f(transaction.subtotal||0)}</span></div>
+              <div class="sum-row"><span>Diskon</span><span>- ${f(transaction.discount||0)}</span></div>
+              <div class="sum-row"><span>Pajak (PPN)</span><span>${f(transaction.taxAmount||0)}</span></div>
+              <div class="sum-row total"><span>TOTAL</span><span>${f(transaction.totalAmount||0)}</span></div>
+              <div class="sum-row"><span>Bayar</span><span>${f(transaction.paidAmount||0)}</span></div>
+              <div class="sum-row"><span>Kembali</span><span>${f(transaction.changeAmount||0)}</span></div>
+            </div>
+            <div class="foot">Terima kasih telah berbelanja<br>Simpan struk sebagai bukti sah<br><span style="letter-spacing:.18em">- - -</span></div>
+            <div class="cut"></div>
           </div>
-          <p style="text-align:center;margin-top:12px;font-size:11px">Terima kasih telah berbelanja</p>
         </body></html>`;
     receiptWindow.document.write(receiptHTML);
     receiptWindow.document.close();

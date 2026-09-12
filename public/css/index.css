@@ -107,10 +107,21 @@ body {
 }
 .search-bar input {
   flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 11px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 14px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.05);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.search-bar input::placeholder { color: #94a3b8; }
+.search-bar input:hover { border-color: #94a3b8; }
+.search-bar input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.18), 0 4px 12px rgba(99,102,241,0.08);
 }
 .product-card {
   background: #fff;
@@ -207,10 +218,30 @@ td input {
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 9px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 10px 11px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.form-group input::placeholder { color: #94a3b8; }
+.form-group input:hover,
+.form-group select:hover { border-color: #94a3b8; }
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.16), 0 1px 3px rgba(15,23,42,0.06);
+}
+#paidAmount {
+  border-width: 1.5px;
+  font-weight: 600;
+}
+.cart-section {
+  border: 1px solid #e2e8f0;
 }
 .action-buttons {
   display: flex;

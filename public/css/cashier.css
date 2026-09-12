@@ -107,10 +107,21 @@ body {
 }
 .search-bar input {
   flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 11px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 14px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.05);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.search-bar input::placeholder { color: #94a3b8; }
+.search-bar input:hover { border-color: #94a3b8; }
+.search-bar input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.18), 0 4px 12px rgba(99,102,241,0.08);
 }
 .product-card {
   background: #fff;
@@ -207,10 +218,30 @@ td input {
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 9px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 10px 11px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.form-group input::placeholder { color: #94a3b8; }
+.form-group input:hover,
+.form-group select:hover { border-color: #94a3b8; }
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.16), 0 1px 3px rgba(15,23,42,0.06);
+}
+#paidAmount {
+  border-width: 1.5px;
+  font-weight: 600;
+}
+.cart-section {
+  border: 1px solid #e2e8f0;
 }
 .action-buttons {
   display: flex;
@@ -263,4 +294,166 @@ button.secondary {
   .summary {
     grid-template-columns: 1fr;
   }
+}
+.pay-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 18px;
+}
+.pay-overlay.show {
+  display: flex;
+  animation: fadeIn 0.22s ease;
+}
+.pay-modal {
+  background: #fff;
+  border-radius: 22px;
+  max-width: 460px;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  animation: modalPop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  position: relative;
+}
+.pay-top {
+  height: 6px;
+  background: linear-gradient(90deg, #27ae60, #2ecc71);
+}
+.pay-body {
+  padding: 22px 22px 16px;
+  text-align: center;
+}
+.pay-icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  color: #fff;
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  box-shadow: 0 10px 24px rgba(39, 174, 96, 0.35);
+  animation: iconPop 0.5s 0.12s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.pay-title {
+  font-size: 19px;
+  color: #1e293b;
+  font-weight: 800;
+}
+.pay-sub {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+.pay-detail {
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 14px 0;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.pay-detail b {
+  color: #1e293b;
+}
+.pay-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px dashed #e2e8f0;
+  font-size: 12px;
+}
+.pay-row:last-child {
+  border: none;
+}
+.pay-row.total b {
+  font-size: 13px;
+}
+.pay-kembali {
+  margin-top: 10px;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  padding: 10px;
+  font-weight: 800;
+  color: #065f46;
+}
+.pay-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.pay-btn {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pay-btn.primary {
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: #fff;
+}
+.pay-btn.secondary {
+  background: #f1f5f9;
+  color: #334155;
+}
+.pay-btn.ghost {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modalPop {
+  from {
+    transform: scale(0.86) translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes iconPop {
+  from {
+    transform: scale(0) rotate(-16deg);
+  }
+  to {
+    transform: scale(1) rotate(0);
+  }
+}
+@keyframes confetti {
+  0% {
+    transform: translateY(-10px) rotate(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(120px) rotate(720deg) scale(0);
+    opacity: 0;
+  }
+}
+.confetti {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  top: 0;
+  animation: confetti 1.18s ease-out forwards;
+  pointer-events: none;
 }

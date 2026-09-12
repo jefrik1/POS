@@ -237,6 +237,7 @@
     </div>
     <script src="/js/role-nav.js"></script>
     <script>
+      function fmtIDR(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Math.round(Number(n)||0));}
       const apiBaseUrl = "/api";
       let accessToken = localStorage.getItem("accessToken");
       if (!accessToken) location.href = "/login.html";
@@ -363,14 +364,14 @@
                 disc = d.summary.reduce((a, b) => a + b.totalDiscount, 0),
                 tax = d.summary.reduce((a, b) => a + b.totalTax, 0);
               sc.innerHTML =
-                '<div class="stat-card"><h4>Total Pendapatan</h4><div class="value">Rp ' +
-                rev.toLocaleString("id-ID") +
+                '<div class="stat-card"><h4>Total Pendapatan</h4><div class="value">' +
+                fmtIDR(rev) +
                 '</div></div><div class="stat-card" style="background:linear-gradient(135deg,#11998e,#38ef7d)"><h4>Total Transaksi</h4><div class="value">' +
                 trx +
-                '</div></div><div class="stat-card" style="background:linear-gradient(135deg,#f46b45,#eea849)"><h4>Total Diskon</h4><div class="value">Rp ' +
-                disc.toLocaleString("id-ID") +
-                '</div></div><div class="stat-card" style="background:linear-gradient(135deg,#8e2de2,#4a00e0)"><h4>Total Pajak</h4><div class="value">Rp ' +
-                tax.toLocaleString("id-ID") +
+                '</div></div><div class="stat-card" style="background:linear-gradient(135deg,#f46b45,#eea849)"><h4>Total Diskon</h4><div class="value">' +
+                fmtIDR(disc) +
+                '</div></div><div class="stat-card" style="background:linear-gradient(135deg,#8e2de2,#4a00e0)"><h4>Total Pajak</h4><div class="value">' +
+                fmtIDR(tax) +
                 "</div></div>";
             } else sc.innerHTML = "";
             if (!d.summary || d.summary.length === 0)
@@ -384,14 +385,10 @@
                     new Date(it.period).toLocaleDateString("id-ID") +
                     "</td><td>" +
                     it.transactionCount +
-                    "</td><td>Rp " +
-                    it.totalSubtotal.toLocaleString("id-ID") +
-                    "</td><td>Rp " +
-                    it.totalDiscount.toLocaleString("id-ID") +
-                    "</td><td>Rp " +
-                    it.totalTax.toLocaleString("id-ID") +
-                    "</td><td><b>Rp " +
-                    it.totalRevenue.toLocaleString("id-ID") +
+                    "</td><td>" + fmtIDR(it.totalSubtotal) +
+                    "</td><td>" + fmtIDR(it.totalDiscount) +
+                    "</td><td>" + fmtIDR(it.totalTax) +
+                    "</td><td><b>" + fmtIDR(it.totalRevenue) +
                     "</b></td></tr>"
                   );
                 })
@@ -439,10 +436,8 @@
                     it.name +
                     "</td><td>" +
                     it.totalQuantity +
-                    "</td><td>Rp " +
-                    it.totalRevenue.toLocaleString("id-ID") +
-                    "</td><td>Rp " +
-                    it.averagePrice.toLocaleString("id-ID") +
+                    "</td><td>" + fmtIDR(it.totalRevenue) +
+                    "</td><td>" + fmtIDR(it.averagePrice) +
                     "</td></tr>"
                   );
                 })
@@ -480,12 +475,9 @@
                     it.cashierName +
                     "</td><td>" +
                     it.transactionCount +
-                    "</td><td>Rp " +
-                    it.totalRevenue.toLocaleString("id-ID") +
-                    "</td><td>Rp " +
-                    it.averageTransactionValue.toLocaleString("id-ID") +
-                    "</td><td>Rp " +
-                    it.totalDiscount.toLocaleString("id-ID") +
+                    "</td><td>" + fmtIDR(it.totalRevenue) +
+                    "</td><td>" + fmtIDR(it.averageTransactionValue) +
+                    "</td><td>" + fmtIDR(it.totalDiscount) +
                     "</td></tr>"
                   );
                 })
@@ -524,8 +516,7 @@
                     it.transactionNumber +
                     "</td><td>" +
                     it.cashierName +
-                    "</td><td>Rp " +
-                    (it.totalAmount || 0).toLocaleString("id-ID") +
+                    "</td><td>" + fmtIDR(it.totalAmount || 0) +
                     "</td><td>" +
                     it.paymentMethod +
                     "</td><td>" +

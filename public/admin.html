@@ -65,15 +65,15 @@
               <h4>Total Pendapatan Hari Ini</h4>
               <div class="val" id="statRevenue">Rp 0</div>
             </div>
-            <div class="stat" style="background: linear-gradient(135deg, #11998e, #38ef7d)">
+            <div class="stat emerald">
               <h4>Transaksi Hari Ini</h4>
               <div class="val" id="statTrx">0</div>
             </div>
-            <div class="stat" style="background: linear-gradient(135deg, #f46b45, #eea849)">
+            <div class="stat amber">
               <h4>Produk Terjual</h4>
               <div class="val" id="statSold">0</div>
             </div>
-            <div class="stat" style="background: linear-gradient(135deg, #8e2de2, #4a00e0)">
+            <div class="stat violet">
               <h4>Cabang Aktif</h4>
               <div class="val" id="statOutletCount">–</div>
             </div>
@@ -201,7 +201,7 @@
       // Helpers
       // ============================================================
 
-      /** Ambil token dari localStorage */
+      function fmtIDR(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Math.round(Number(n)||0));}
       function getToken() {
         return localStorage.getItem("accessToken") || "";
       }
@@ -261,8 +261,7 @@
           .then(function (r) { return r.json(); })
           .then(function (d) {
             var today = d.today || d;
-            document.getElementById("statRevenue").textContent =
-              "Rp " + (today.totalRevenue || 0).toLocaleString("id-ID");
+            document.getElementById("statRevenue").textContent = fmtIDR(today.totalRevenue||0);
             document.getElementById("statTrx").textContent = today.transactionCount || 0;
             document.getElementById("statSold").textContent = today.totalSold || 0;
           })
